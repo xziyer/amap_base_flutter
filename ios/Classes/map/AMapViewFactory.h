@@ -20,3 +20,7 @@ static NSString *success = @"调用成功";
 
 - (void) setup;
 @end
+
+@interface DragMapStreamHandler : NSObject <FlutterStreamHandler>
+- (void) onDragMap:(NSString*) cameraPosition;
+@end

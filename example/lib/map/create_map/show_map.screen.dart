@@ -3,6 +3,14 @@ import 'package:amap_base_example/utils/utils.export.dart';
 import 'package:amap_base_example/widgets/setting.widget.dart';
 import 'package:flutter/material.dart';
 
+const markerList = const [
+  LatLng(30.308802, 120.071179),
+//  LatLng(30.2412, 120.00938),
+//  LatLng(30.296945, 120.35133),
+//  LatLng(30.328955, 120.365063),
+//  LatLng(30.181862, 120.369183),
+];
+
 class ShowMapScreen extends StatefulWidget {
   ShowMapScreen();
 
@@ -26,6 +34,10 @@ class _ShowMapScreenState extends State<ShowMapScreen> {
             child: AMapView(
               onAMapViewCreated: (controller) {
                 _controller = controller;
+                _controller.dragMapEvent.listen((marker) {
+                  print(marker);
+                });
+                controller.clearMap();
               },
               amapOptions: AMapOptions(
                 compassEnabled: false,

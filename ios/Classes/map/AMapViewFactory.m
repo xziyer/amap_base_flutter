@@ -16,6 +16,7 @@
 
 static NSString *mapChannelName = @"me.yohom/map";
 static NSString *markerClickedChannelName = @"me.yohom/marker_clicked";
+static NSString *dragMapChannelName = @"me.yohom/drag_map";
 
 @implementation AMapViewFactory {
 }
@@ -43,6 +44,8 @@ static NSString *markerClickedChannelName = @"me.yohom/marker_clicked";
     UnifiedAMapOptions *_options;
     FlutterMethodChannel *_methodChannel;
     FlutterEventChannel *_markerClickedEventChannel;
+    FlutterEventChannel *_dragMapEventChannel;
+    DragMapStreamHandler *_dragMapStreamHandler;
     FlutterEventSink _sink;
     MAMapView *_mapView;
 }
@@ -110,6 +113,11 @@ static NSString *markerClickedChannelName = @"me.yohom/marker_clicked";
     _markerClickedEventChannel = [FlutterEventChannel eventChannelWithName:[NSString stringWithFormat:@"%@%lld", markerClickedChannelName, _viewId]
                                                            binaryMessenger:[AMapBasePlugin registrar].messenger];
     [_markerClickedEventChannel setStreamHandler:self];
+
+    _dragMapStreamHandler = [[DragMapStreamHandler alloc] init];
+    _dragMapEventChannel = [FlutterEventChannel eventChannelWithName:[NSString stringWithFormat:@"%@%lld", dragMapChannelName, _viewId]
+                                                     binaryMessenger:[AMapBasePlugin registrar].messenger];
+    [_dragMapEventChannel setStreamHandler:_dragMapStreamHandler];
 }
 
 #pragma MAMapViewDelegate
@@ -120,6 +128,22 @@ static NSString *markerClickedChannelName = @"me.yohom/marker_clicked";
         MarkerAnnotation *annotation = (MarkerAnnotation *) view.annotation;
         _sink([annotation.markerOptions mj_JSONString]);
     }
+}
+
+#pragma mark - MapViewDelegate
+
+- (void)mapView:(MAMapView *)mapView regionDidChangeAnimated:(BOOL)animated {
+    MAMapStatus *status = mapView.getMapStatus;
+    NSDictionary *dict = @{
+            @"tilt": @(status.cameraDegree),
+            @"zoom": @(status.zoomLevel),
+            @"bearing": @(status.rotationDegree),
+            @"target": @{
+                @"latitude": @(status.centerCoordinate.latitude),
+                @"longitude": @(status.centerCoordinate.longitude)
+            }
+    };
+    [_dragMapStreamHandler onDragMap: [dict mj_JSONString]];
 }
 
 /// 渲染overlay回调
@@ -209,5 +233,26 @@ static NSString *markerClickedChannelName = @"me.yohom/marker_clicked";
     return nil;
 }
 
+
+@end
+
+@implementation DragMapStreamHandler {
+    FlutterEventSink _sink;
+}
+
+- (FlutterError *_Nullable)onListenWithArguments:(id _Nullable)arguments eventSink:(FlutterEventSink)events {
+    _sink = events;
+    return nil;
+}
+
+- (FlutterError *_Nullable)onCancelWithArguments:(id _Nullable)arguments {
+    return nil;
+}
+
+- (void) onDragMap:(NSString*) cameraPosition {
+    if (_sink) {
+        _sink(cameraPosition);
+    }
+}
 
 @end

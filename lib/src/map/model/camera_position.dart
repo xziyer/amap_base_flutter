@@ -35,6 +35,14 @@ class CameraPosition {
 
   String toJsonString() => jsonEncode(toJson());
 
+  CameraPosition.fromJson(Map<String, dynamic> json)
+      : zoom = (json['zoom'] as num).toDouble(),
+        tilt = (json['tilt'] as num).toDouble(),
+        bearing = (json['bearing'] as num) <= 0.0
+            ? (json['bearing'] as num) % 360.0 + 360.0
+            : (json['bearing'] as num) % 360.0,
+        target = LatLng.fromJson(json['target']);
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
