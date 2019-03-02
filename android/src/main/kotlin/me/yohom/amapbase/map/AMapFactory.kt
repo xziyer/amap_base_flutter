@@ -6,8 +6,10 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import com.amap.api.maps.AMap
 import com.amap.api.maps.AMapOptions
 import com.amap.api.maps.TextureMapView
+import com.amap.api.maps.model.CameraPosition
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
@@ -21,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 const val mapChannelName = "me.yohom/map"
 const val markerClickedChannelName = "me.yohom/marker_clicked"
+const val dragMapChannelName = "me.yohom/drag_map"
 const val success = "调用成功"
 
 class AMapFactory(private val activityState: AtomicInteger)
@@ -99,6 +102,26 @@ class AMapView(context: Context,
             eventSink?.success(UnifiedMarkerOptions(it.options).toFieldJson())
             true
         }
+
+        // drag map event channel
+        var dragMapEventSink: EventChannel.EventSink? = null
+        var dragMapEventChannel = EventChannel(registrar.messenger(), "$dragMapChannelName$id")
+        dragMapEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(p0: Any?, sink: EventChannel.EventSink?) {
+                dragMapEventSink = sink
+            }
+
+            override fun onCancel(p0: Any?) {}
+        })
+        mapView.map.setOnCameraChangeListener(object : AMap.OnCameraChangeListener {
+            override fun onCameraChangeFinish(position: CameraPosition?) {
+                dragMapEventSink?.success(position?.toFieldJson())
+            }
+
+            override fun onCameraChange(position: CameraPosition?) {
+                dragMapEventSink?.success(position?.toFieldJson())
+            }
+        })
 
         // 注册生命周期
         registrar.activity().application.registerActivityLifecycleCallbacks(this)
