@@ -119,7 +119,6 @@ class AMapView(context: Context,
             }
 
             override fun onCameraChange(position: CameraPosition?) {
-                dragMapEventSink?.success(position?.toFieldJson())
             }
         })
 
